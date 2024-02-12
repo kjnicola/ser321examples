@@ -330,9 +330,9 @@ class WebServer {
           
             try {
             
-              int base = Integer.parseInt(query_pairs.get("base"));
-              int exponent = Integer.parseInt(query_pairs.get("exponent"));
-              int mathOutcome = Math.pow(base, exponent);
+              double base = Double.parseDouble(query_pairs.get("base"));
+              double exponent = Double.parseDouble(query_pairs.get("exponent"));
+              double mathOutcome = Math.pow(base, exponent);
               
               //Code 200 OK request
               builder.append("HTTP/1.1 200 OK\n");
