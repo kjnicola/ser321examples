@@ -338,51 +338,59 @@ class WebServer {
             }
           }
 
-        } else if (request.contains("temperature?")) {
+        } else if (request.contains("temperature_conversion?")) {
+    // Convert temperature between Fahrenheit and Celsius
 
-    Map<String, String> query_pairs = splitQuery(request.replace("temperature?", ""));
+    Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+    query_pairs = splitQuery(request.replace("temperature_conversion?", ""));
 
-    if (!query_pairs.containsKey("unit") || !query_pairs.containsKey("value")) {
+    // Check if the required parameters are present
+    if (!query_pairs.containsKey("temperature") || !query_pairs.containsKey("unit")) {
+        // Return a 400 Bad Request if the parameters are missing
         builder.append("HTTP/1.1 400 Bad Request\n");
         builder.append("Content-Type: text/html; charset=utf-8\n");
         builder.append("\n");
-        builder.append("Need to provide both unit and value parameters.");
+        builder.append("Missing 'temperature' or 'unit' parameter.");
     } else {
-        String unit = query_pairs.get("unit").toUpperCase();
-        double value;
         try {
-            value = Double.parseDouble(query_pairs.get("value"));
+            // Extract temperature value and unit
+            double temperature = Double.parseDouble(query_pairs.get("temperature"));
+            String unit = query_pairs.get("unit");
+
+            // Perform temperature conversion
+            double result;
+            String resultUnit;
+            if (unit.equalsIgnoreCase("F")) {
+                // Convert Fahrenheit to Celsius
+                result = (temperature - 32) * 5 / 9;
+                resultUnit = "C";
+            } else if (unit.equalsIgnoreCase("C")) {
+                // Convert Celsius to Fahrenheit
+                result = (temperature * 9 / 5) + 32;
+                resultUnit = "F";
+            } else {
+                // Invalid unit provided
+                builder.append("HTTP/1.1 400 Bad Request\n");
+                builder.append("Content-Type: text/html; charset=utf-8\n");
+                builder.append("\n");
+                builder.append("Invalid unit. Unit must be 'F' or 'C'.");
+                return builder.toString().getBytes();
+            }
+
+            // Generate response
+            builder.append("HTTP/1.1 200 OK\n");
+            builder.append("Content-Type: text/html; charset=utf-8\n");
+            builder.append("\n");
+            builder.append("Converted temperature: ").append(result).append(" ").append(resultUnit);
         } catch (NumberFormatException e) {
+            // Invalid temperature value provided
             builder.append("HTTP/1.1 400 Bad Request\n");
             builder.append("Content-Type: text/html; charset=utf-8\n");
             builder.append("\n");
-            builder.append("Temperature value must be a valid number.");
-            return response;
+            builder.append("Invalid temperature value.");
         }
-
-        double result;
-        String convertedUnit;
-
-        if (unit.equals("C")) {
-            result = (value * 9 / 5) + 32;
-            convertedUnit = "Fahrenheit";
-        } else if (unit.equals("F")) {
-            result = (value - 32) * 5 / 9;
-            convertedUnit = "Celsius";
-        } else {
-            builder.append("HTTP/1.1 400 Bad Request\n");
-            builder.append("Content-Type: text/html; charset=utf-8\n");
-            builder.append("\n");
-            builder.append("Invalid temperature unit. Must be either 'C' or 'F'.");
-            return response;
-        }
-
-        builder.append("HTTP/1.1 200 OK\n");
-        builder.append("Content-Type: text/html; charset=utf-8\n");
-        builder.append("\n");
-        builder.append("Temperature equivalent to ").append(value).append("°").append(unit).append(" is ").append(result).append("°").append(convertedUnit);
     }
-}
+} 
         
         else {
           // if the request is not recognized at all
