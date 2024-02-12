@@ -25,7 +25,7 @@ import java.util.Random;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.nio.charset.Charset;
-import org.json.JSONArray;
+import org.json.*;
 
 class WebServer {
   public static void main(String args[]) {
@@ -246,78 +246,56 @@ class WebServer {
          }
 
         } else if (request.contains("github?")) {
-          // pulls the query from the request and runs it with GitHub's REST API
-          // check out https://docs.github.com/rest/reference/
-          //
-          // HINT: REST is organized by nesting topics. Figure out the biggest one first,
-          //     then drill down to what you care about
-          // "Owner's repo is named RepoName. Example: find RepoName's contributors" translates to
-          //     "/repos/OWNERNAME/REPONAME/contributors"
+                    // pulls the query from the request and runs it with GitHub's REST API
+                    // check out https://docs.github.com/rest/reference/
+                    //
+                    // HINT: REST is organized by nesting topics. Figure out the biggest one first,
+                    //     then drill down to what you care about
+                    // "Owner's repo is named RepoName. Example: find RepoName's contributors" translates to
+                    //     "/repos/OWNERNAME/REPONAME/contributors"
 
-          Map<String, String> query_pairs = new LinkedHashMap<String, String>();
-          query_pairs = splitQuery(request.replace("github?", ""));
-          String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
-          System.out.println(json);
-          
-         try {
-         
-          JSONArray array = new JSONArray(json);
-          StringBuilder output = new StringBuilder();
+                    Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+                    query_pairs = splitQuery(request.replace("github?", ""));
+                    String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
+                    System.out.println(json);
 
-        for (int i = 0; i < array.length(); i++) {
-        
-            JSONObject repository = array.getJSONObject(i);
-            
-            String name = repository.getString("full_name");
-            int identification = repository.getInt("id");
-            JSONObject owner = repository.getJSONObject("owner");
-            
-            String login = owner.getString("login");
+                    // Parse the JSON returned by your fetch and create an appropriate response
+                    JSONArray jsonArray = new JSONArray(json);
+                    JSONObject repo;
+                    StringBuilder responseData = new StringBuilder();
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        repo = jsonArray.getJSONObject(i);
+                        responseData.append("Repo Name: ").append(repo.getString("full_name")).append("<br/>");
+                        responseData.append("Repo ID: ").append(repo.getInt("id")).append("<br/>");
+                        responseData.append("Owner's Login: ").append(repo.getJSONObject("owner").getString("login")).append("<br/>");
+                        responseData.append("<br/>");
+                    }
 
-            output.append("Repository: ").append(name)
-                        .append(", ID: ").append(identification)
-                        .append(", Owner: ").append(login)
-                        .append("<br>");
+                    builder.append("HTTP/1.1 200 OK\n");
+                    builder.append("Content-Type: text/html; charset=utf-8\n");
+                    builder.append("\n");
+                    builder.append(responseData.toString());
+
+                } else {
+                    // if the request is not recognized at all
+
+                    builder.append("HTTP/1.1 400 Bad Request\n");
+                    builder.append("Content-Type: text/html; charset=utf-8\n");
+                    builder.append("\n");
+                    builder.append("I am not sure what you want me to do...");
+                }
+
+                // Output
+                response = builder.toString().getBytes();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            response = ("<html>ERROR: " + e.getMessage() + "</html>").getBytes();
         }
 
-          builder.append("HTTP/1.1 200 OK\n");
-          builder.append("Content-Type: text/html; charset=utf-8\n");
-          builder.append("\n");
-          builder.append(responseData.toString());
-          
-          // TODO: Parse the JSON returned by your fetch and create an appropriate
-          // response based on what the assignment document asks for
-
-        }
-        
-        catch (JSONException e) {
-        // Error handling for JSON parsing errors
-        builder.append("HTTP/1.1 500 Internal Server Error\n");
-        builder.append("Content-Type: text/html; charset=utf-8\n");
-        builder.append("\n");
-        builder.append("There was an issue with the JSON: ").append(e.getMessage());
-    }
-}
-
-        else {
-          // if the request is not recognized at all
-
-          builder.append("HTTP/1.1 400 Bad Request\n");
-          builder.append("Content-Type: text/html; charset=utf-8\n");
-          builder.append("\n");
-          builder.append("I am not sure what you want me to do...");
-        }
-
-        // Output
-        response = builder.toString().getBytes();
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-      response = ("<html>ERROR: " + e.getMessage() + "</html>").getBytes();
+        return response;
     }
 
-    return response;
-  }
 
   /**
    * Method to read in a query and split it up correctly
