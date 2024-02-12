@@ -1,4 +1,4 @@
-/*
+ /*
 Simple Web Server in Java which allows you to call 
 localhost:9000/ and show you the root.html webpage from the www/root.html folder
 You can also do some other simple GET requests:
@@ -6,7 +6,7 @@ You can also do some other simple GET requests:
 2) json shows you the response as JSON for /random instead the html page
 3) /file/filename shows you the raw file (not as HTML)
 4) /multiply?num1=3&num2=4 multiplies the two inputs and responses with the result
-5) /github?query=users/amehlhase316/repos (or other GitHub repo owners) will lead to receiving
+5) /github?query=users/user/repos (or other GitHub repo owners) will lead to receiving
    JSON which will for now only be printed in the console. See the todo below
 
 The reading of the request is done "manually", meaning no library that helps making things a 
@@ -200,7 +200,21 @@ class WebServer {
           Map<String, String> query_pairs = new LinkedHashMap<String, String>();
           // extract path parameters
           query_pairs = splitQuery(request.replace("multiply?", ""));
-
+          
+          if (!query_pairs.containsKey("num1") || !query_pairs.containsKey("num2")) {
+          
+          //Code 400 for a bad request
+          builder.append("HTTP/1.1 400 Bad Request\n");
+          builder.append("Content-Type: text/html; charset=utf-8\n");
+          builder.append("\n");
+          builder.append("Need to have both num1 and num2 parameters");
+          
+          }
+          
+          else {
+          
+          try {
+	  
           // extract required fields from parameters
           Integer num1 = Integer.parseInt(query_pairs.get("num1"));
           Integer num2 = Integer.parseInt(query_pairs.get("num2"));
@@ -213,9 +227,22 @@ class WebServer {
           builder.append("Content-Type: text/html; charset=utf-8\n");
           builder.append("\n");
           builder.append("Result is: " + result);
-
-          // TODO: Include error handling here with a correct error code and
+          
+          } 
+          
+           // TODO: Include error handling here with a correct error code and
           // a response that makes sense
+          
+          catch (NumberFormatException e) {
+          
+          //400 error code message for bad request if there is an issue with parsing
+          builder.append("HTTP/1.1 400 Bad Request\n");
+          builder.append("Content-Type: text/html; charset=utf-8\n");
+          builder.append("\n");
+          builder.append("Input must contain two integers");
+          }
+         }
+        
 
         } else if (request.contains("github?")) {
           // pulls the query from the request and runs it with GitHub's REST API
