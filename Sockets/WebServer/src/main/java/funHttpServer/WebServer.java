@@ -256,26 +256,56 @@ class WebServer {
 
                     Map<String, String> query_pairs = new LinkedHashMap<String, String>();
                     query_pairs = splitQuery(request.replace("github?", ""));
-                    String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
-                    System.out.println(json);
+                    
+                    // Check if the query parameter exists
+                    if (!query_pairs.containsKey("query")) {
+                        // Return a 400 Bad Request if the query parameter is missing
+                        builder.append("HTTP/1.1 400 Bad Request\n");
+                        builder.append("Content-Type: text/html; charset=utf-8\n");
+                        builder.append("\n");
+                        builder.append("Missing query parameter in request.");
+                    } else {
+                        // Fetch GitHub data
+                        String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
+                        
+                        // Check if the JSON response is empty or null
+                        if (json == null || json.isEmpty()) {
+                            // Return a 404 Not Found if the data is not found
+                            builder.append("HTTP/1.1 404 Not Found\n");
+                            builder.append("Content-Type: text/html; charset=utf-8\n");
+                            builder.append("\n");
+                            builder.append("No data found for the given query.");
+                        } else {
+                            // Parse the JSON and extract the required information
+                            // (Full name of the repos, ids of the repos, login of owner)
+                            // For now, just print the JSON response
+                            System.out.println(json);
 
-                    // Parse the JSON returned by your fetch and create an appropriate response
-                    JSONArray jsonArray = new JSONArray(json);
-                    JSONObject repo;
-                    StringBuilder responseData = new StringBuilder();
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        repo = jsonArray.getJSONObject(i);
-                        responseData.append("Repo Name: ").append(repo.getString("full_name")).append("<br/>");
-                        responseData.append("Repo ID: ").append(repo.getInt("id")).append("<br/>");
-                        responseData.append("Owner's Login: ").append(repo.getJSONObject("owner").getString("login")).append("<br/>");
-                        responseData.append("<br/>");
+                            // Parse the JSON response
+                            JSONArray jsonArray = new JSONArray(json);
+                            StringBuilder responseData = new StringBuilder();
+
+                            // Extract data for each repository
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject repo = jsonArray.getJSONObject(i);
+                                String fullName = repo.getString("full_name");
+                                int repoId = repo.getInt("id");
+                                JSONObject owner = repo.getJSONObject("owner");
+                                String ownerLogin = owner.getString("login");
+                                
+                                // Append the extracted data to the response
+                                responseData.append("Repo Name: ").append(fullName).append("<br/>");
+                                responseData.append("Repo ID: ").append(repoId).append("<br/>");
+                                responseData.append("Owner: ").append(ownerLogin).append("<br/><br/>");
+                            }
+
+                            // Build the complete response
+                            builder.append("HTTP/1.1 200 OK\n");
+                            builder.append("Content-Type: text/html; charset=utf-8\n");
+                            builder.append("\n");
+                            builder.append(responseData.toString());
+                        }
                     }
-
-                    builder.append("HTTP/1.1 200 OK\n");
-                    builder.append("Content-Type: text/html; charset=utf-8\n");
-                    builder.append("\n");
-                    builder.append(responseData.toString());
-
                 } else {
                     // if the request is not recognized at all
 
