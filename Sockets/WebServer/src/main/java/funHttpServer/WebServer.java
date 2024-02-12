@@ -313,81 +313,100 @@ class WebServer {
           
         } 
         
+        //Request for returning the power of a base to the exponent
         else if (request.contains("power?")) {
 
-          Map<String, String> query_pairs = splitQuery(request.replace("power?", ""));
-          if (!query_pairs.containsKey("base") || !query_pairs.containsKey("exponent")) {
-            builder.append("HTTP/1.1 400 Bad Request\n");
-            builder.append("Content-Type: text/html; charset=utf-8\n");
-            builder.append("\n");
-            builder.append("Need to have both base and exponent parameters");
-          } else {
+        Map<String, String> query_pairs = splitQuery(request.replace("power?", ""));
+          
+        if (!query_pairs.containsKey("base") || !query_pairs.containsKey("exponent")) {
+              
+              //Code 400 Bad Request
+              builder.append("HTTP/1.1 400 Bad Request\n");
+              builder.append("Content-Type: text/html; charset=utf-8\n");
+              builder.append("\n");
+              builder.append("At least one parameter is missing");
+              
+        } else {
+          
             try {
-              double base = Double.parseDouble(query_pairs.get("base"));
-              double exponent = Double.parseDouble(query_pairs.get("exponent"));
-              double result = Math.pow(base, exponent);
+            
+              int base = Integer.parseInt(query_pairs.get("base"));
+              int exponent = Integer.parseInt(query_pairs.get("exponent"));
+              int mathOutcome = Math.pow(base, exponent);
+              
+              //Code 200 OK request
               builder.append("HTTP/1.1 200 OK\n");
               builder.append("Content-Type: text/html; charset=utf-8\n");
               builder.append("\n");
-              builder.append("Result is: ").append(result);
+              builder.append("Output: ").append(mathOutcome);
+              
+              //Code 400 Bad Request
             } catch (NumberFormatException e) {
               builder.append("HTTP/1.1 400 Bad Request\n");
               builder.append("Content-Type: text/html; charset=utf-8\n");
               builder.append("\n");
-              builder.append("Input must contain two valid numbers");
+              builder.append("At least one number is invalid");
             }
           }
 
         } else if (request.contains("temperature_conversion?")) {
-    // Convert temperature between Fahrenheit and Celsius
 
     Map<String, String> query_pairs = new LinkedHashMap<String, String>();
     query_pairs = splitQuery(request.replace("temperature_conversion?", ""));
 
-    // Check if the required parameters are present
     if (!query_pairs.containsKey("temperature") || !query_pairs.containsKey("unit")) {
-        // Return a 400 Bad Request if the parameters are missing
+    
+        //Code 400 Bad Request
         builder.append("HTTP/1.1 400 Bad Request\n");
         builder.append("Content-Type: text/html; charset=utf-8\n");
         builder.append("\n");
-        builder.append("Missing 'temperature' or 'unit' parameter.");
+        builder.append("Missing at least one parameter");
+        
     } else {
+    
         try {
-            // Extract temperature value and unit
-            double temperature = Double.parseDouble(query_pairs.get("temperature"));
-            String unit = query_pairs.get("unit");
 
-            // Perform temperature conversion
-            double result;
-            String resultUnit;
-            if (unit.equalsIgnoreCase("F")) {
-                // Convert Fahrenheit to Celsius
-                result = (temperature - 32) * 5 / 9;
-                resultUnit = "C";
-            } else if (unit.equalsIgnoreCase("C")) {
-                // Convert Celsius to Fahrenheit
-                result = (temperature * 9 / 5) + 32;
-                resultUnit = "F";
+            double tempValue = Double.parseDouble(query_pairs.get("temperature"));
+            String element = query_pairs.get("unit");
+
+            double outputTemp;
+            String outputUnit;
+            
+            if (element.equalsIgnoreCase("F")) {
+            
+                outputTemp = (tempValue - 32) * 5 / 9;
+                outputUnit = "C";
+                
+            } else if (element.equalsIgnoreCase("C")) {
+            
+                outputTemp = (tempValue * 9 / 5) + 32;
+                outputUnit = "F";
+                
             } else {
-                // Invalid unit provided
+            
+                //Code 400 Bad Request
                 builder.append("HTTP/1.1 400 Bad Request\n");
                 builder.append("Content-Type: text/html; charset=utf-8\n");
                 builder.append("\n");
-                builder.append("Invalid unit. Unit must be 'F' or 'C'.");
+                builder.append("The unit should either be 'F' or 'C'.");
                 return builder.toString().getBytes();
+                
             }
 
-            // Generate response
+            //Code 200 OK request
             builder.append("HTTP/1.1 200 OK\n");
             builder.append("Content-Type: text/html; charset=utf-8\n");
             builder.append("\n");
-            builder.append("Converted temperature: ").append(result).append(" ").append(resultUnit);
+            builder.append("Temperature Conversion: ").append(outputTemp).append(" ").append(outputUnit);
+            
         } catch (NumberFormatException e) {
-            // Invalid temperature value provided
+        
+            //Code 400 Bad Request
             builder.append("HTTP/1.1 400 Bad Request\n");
             builder.append("Content-Type: text/html; charset=utf-8\n");
             builder.append("\n");
-            builder.append("Invalid temperature value.");
+            builder.append("The temperature value is not valid");
+            
         }
     }
 } 
