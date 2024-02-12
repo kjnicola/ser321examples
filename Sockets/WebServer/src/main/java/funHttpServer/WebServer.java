@@ -311,7 +311,62 @@ class WebServer {
                
           }
           
-        } else {
+        } 
+        
+        else if (request.contains("power?")) {
+
+          Map<String, String> query_pairs = splitQuery(request.replace("power?", ""));
+          if (!query_pairs.containsKey("base") || !query_pairs.containsKey("exponent")) {
+            builder.append("HTTP/1.1 400 Bad Request\n");
+            builder.append("Content-Type: text/html; charset=utf-8\n");
+            builder.append("\n");
+            builder.append("Need to have both base and exponent parameters");
+          } else {
+            try {
+              double base = Double.parseDouble(query_pairs.get("base"));
+              double exponent = Double.parseDouble(query_pairs.get("exponent"));
+              double result = Math.pow(base, exponent);
+              builder.append("HTTP/1.1 200 OK\n");
+              builder.append("Content-Type: text/html; charset=utf-8\n");
+              builder.append("\n");
+              builder.append("Result is: ").append(result);
+            } catch (NumberFormatException e) {
+              builder.append("HTTP/1.1 400 Bad Request\n");
+              builder.append("Content-Type: text/html; charset=utf-8\n");
+              builder.append("\n");
+              builder.append("Input must contain two valid numbers");
+            }
+          }
+
+        } else if (request.contains("factorial?")) {
+
+          Map<String, String> query_pairs = splitQuery(request.replace("factorial?", ""));
+          if (!query_pairs.containsKey("number")) {
+            builder.append("HTTP/1.1 400 Bad Request\n");
+            builder.append("Content-Type: text/html; charset=utf-8\n");
+            builder.append("\n");
+            builder.append("Need to have the number parameter");
+          } else {
+            try {
+              int number = Integer.parseInt(query_pairs.get("number"));
+              int result = 1;
+              for (int i = 1; i <= number; i++) {
+                result *= i;
+              }
+              builder.append("HTTP/1.1 200 OK\n");
+              builder.append("Content-Type: text/html; charset=utf-8\n");
+              builder.append("\n");
+              builder.append("Result is: ").append(result);
+            } catch (NumberFormatException e) {
+              builder.append("HTTP/1.1 400 Bad Request\n");
+              builder.append("Content-Type: text/html; charset=utf-8\n");
+              builder.append("\n");
+              builder.append("Input must be a valid integer");
+            }
+          }
+        }
+        
+        else {
           // if the request is not recognized at all
 
           builder.append("HTTP/1.1 400 Bad Request\n");
