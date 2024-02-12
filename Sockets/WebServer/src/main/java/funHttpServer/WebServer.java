@@ -241,8 +241,8 @@ class WebServer {
           builder.append("\n");
           builder.append("Input must contain two integers");
           }
+          
          }
-        
 
         } else if (request.contains("github?")) {
           // pulls the query from the request and runs it with GitHub's REST API
@@ -257,15 +257,48 @@ class WebServer {
           query_pairs = splitQuery(request.replace("github?", ""));
           String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
           System.out.println(json);
+          
+         try {
+         
+          JSONArray array = new JSONArray(json);
+          StringBuilder output = new StringBuilder();
+
+        for (int i = 0; i < array.length(); i++) {
+        
+            JSONObject repository = array.getJSONObject(i);
+            
+            String name = repository.getString("full_name");
+            int identification = repository.getInt("id");
+            JSONObject owner = repository.getJSONObject("owner");
+            
+            String login = owner.getString("login");
+
+            output.append("Repository: ").append(name)
+                        .append(", ID: ").append(identification)
+                        .append(", Owner: ").append(login)
+                        .append("<br>");
+        }
 
           builder.append("HTTP/1.1 200 OK\n");
           builder.append("Content-Type: text/html; charset=utf-8\n");
           builder.append("\n");
-          builder.append("Check the todos mentioned in the Java source file");
+          builder.append(responseData.toString());
+          
           // TODO: Parse the JSON returned by your fetch and create an appropriate
           // response based on what the assignment document asks for
 
-        } else {
+        }
+        
+        catch (JSONException e) {
+        // Error handling for JSON parsing errors
+        builder.append("HTTP/1.1 500 Internal Server Error\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("There was an issue with the JSON: ").append(e.getMessage());
+    }
+}
+
+        else {
           // if the request is not recognized at all
 
           builder.append("HTTP/1.1 400 Bad Request\n");
