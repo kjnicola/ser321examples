@@ -246,74 +246,79 @@ class WebServer {
          }
 
         } else if (request.contains("github?")) {
-                    // pulls the query from the request and runs it with GitHub's REST API
-                    // check out https://docs.github.com/rest/reference/
-                    //
-                    // HINT: REST is organized by nesting topics. Figure out the biggest one first,
-                    //     then drill down to what you care about
-                    // "Owner's repo is named RepoName. Example: find RepoName's contributors" translates to
-                    //     "/repos/OWNERNAME/REPONAME/contributors"
+          // pulls the query from the request and runs it with GitHub's REST API
+          // check out https://docs.github.com/rest/reference/
+          //
+          // HINT: REST is organized by nesting topics. Figure out the biggest one first,
+          //     then drill down to what you care about
+          // "Owner's repo is named RepoName. Example: find RepoName's contributors" translates to
+          //     "/repos/OWNERNAME/REPONAME/contributors"
 
-                    Map<String, String> query_pairs = new LinkedHashMap<String, String>();
-                    query_pairs = splitQuery(request.replace("github?", ""));
+          Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+          query_pairs = splitQuery(request.replace("github?", ""));
                     
-                    // Check if the query parameter exists
-                    if (!query_pairs.containsKey("query")) {
-                        // Return a 400 Bad Request if the query parameter is missing
-                        builder.append("HTTP/1.1 400 Bad Request\n");
-                        builder.append("Content-Type: text/html; charset=utf-8\n");
-                        builder.append("\n");
-                        builder.append("Missing query parameter in request.");
-                    } else {
-                        // Fetch GitHub data
-                        String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
+                  
+          if (!query_pairs.containsKey("query")) {
+                    
+          //Code 400 Bad Request
+          builder.append("HTTP/1.1 400 Bad Request\n");
+          builder.append("Content-Type: text/html; charset=utf-8\n");
+          builder.append("\n");
+          builder.append("There is an unrecognized query");
                         
-                        // Check if the JSON response is empty or null
-                        if (json == null || json.isEmpty()) {
-                            // Return a 404 Not Found if the data is not found
-                            builder.append("HTTP/1.1 404 Not Found\n");
-                            builder.append("Content-Type: text/html; charset=utf-8\n");
-                            builder.append("\n");
-                            builder.append("No data found for the given query.");
-                        } else {
-                            // Parse the JSON and extract the required information
-                            // (Full name of the repos, ids of the repos, login of owner)
-                            // For now, just print the JSON response
-                            System.out.println(json);
+          } else {
+                        
+          String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
+                        
+                        
+          if (json == null || json.isEmpty()) {
+                        
+          //Code 404 Not Found if there is no data
+          builder.append("HTTP/1.1 404 Not Found\n");
+          builder.append("Content-Type: text/html; charset=utf-8\n");
+          builder.append("\n");
+          builder.append("The query has no data");
+                            
+          } else {
+                        
+          System.out.println(json);
 
-                            // Parse the JSON response
-                            JSONArray jsonArray = new JSONArray(json);
-                            StringBuilder responseData = new StringBuilder();
+          JSONArray array = new JSONArray(json);
+          StringBuilder output = new StringBuilder();
 
-                            // Extract data for each repository
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                JSONObject repo = jsonArray.getJSONObject(i);
-                                String fullName = repo.getString("full_name");
-                                int repoId = repo.getInt("id");
-                                JSONObject owner = repo.getJSONObject("owner");
-                                String ownerLogin = owner.getString("login");
+          for (int i = 0; i < array.length(); i++) {
+                            
+          JSONObject repository = array.getJSONObject(i);
                                 
-                                // Append the extracted data to the response
-                                responseData.append("Repo Name: ").append(fullName).append("<br/>");
-                                responseData.append("Repo ID: ").append(repoId).append("<br/>");
-                                responseData.append("Owner: ").append(ownerLogin).append("<br/><br/>");
-                            }
+          String name = repository.getString("full_name");
+          int identify = repository.getInt("id");
+          JSONObject owner = repository.getJSONObject("owner");
+          String login = owner.getString("login");
+                                
+          output.append("Repository Name: ").append(name).append("<br/>");
+          output.append("Repository ID: ").append(identify).append("<br/>");
+          output.append("Owner: ").append(login).append("<br/><br/>");
+          
+          }
 
-                            // Build the complete response
-                            builder.append("HTTP/1.1 200 OK\n");
-                            builder.append("Content-Type: text/html; charset=utf-8\n");
-                            builder.append("\n");
-                            builder.append(responseData.toString());
-                        }
-                    }
-                } else {
-                    // if the request is not recognized at all
+	  //Code 200 OK response
+          builder.append("HTTP/1.1 200 OK\n");
+          builder.append("Content-Type: text/html; charset=utf-8\n");
+          builder.append("\n");
+          builder.append(output.toString());
+          
+               }
+               
+          }
+          
+        } else {
+          // if the request is not recognized at all
 
-                    builder.append("HTTP/1.1 400 Bad Request\n");
-                    builder.append("Content-Type: text/html; charset=utf-8\n");
-                    builder.append("\n");
-                    builder.append("I am not sure what you want me to do...");
-                }
+          builder.append("HTTP/1.1 400 Bad Request\n");
+          builder.append("Content-Type: text/html; charset=utf-8\n");
+          builder.append("\n");
+          builder.append("I am not sure what you want me to do...");
+         }
 
                 // Output
                 response = builder.toString().getBytes();
