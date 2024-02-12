@@ -338,33 +338,51 @@ class WebServer {
             }
           }
 
-        } else if (request.contains("factorial?")) {
+        } else if (request.contains("temperature?")) {
 
-          Map<String, String> query_pairs = splitQuery(request.replace("factorial?", ""));
-          if (!query_pairs.containsKey("number")) {
+    Map<String, String> query_pairs = splitQuery(request.replace("temperature?", ""));
+
+    if (!query_pairs.containsKey("unit") || !query_pairs.containsKey("value")) {
+        builder.append("HTTP/1.1 400 Bad Request\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Need to provide both unit and value parameters.");
+    } else {
+        String unit = query_pairs.get("unit").toUpperCase();
+        double value;
+        try {
+            value = Double.parseDouble(query_pairs.get("value"));
+        } catch (NumberFormatException e) {
             builder.append("HTTP/1.1 400 Bad Request\n");
             builder.append("Content-Type: text/html; charset=utf-8\n");
             builder.append("\n");
-            builder.append("Need to have the number parameter");
-          } else {
-            try {
-              int number = Integer.parseInt(query_pairs.get("number"));
-              int result = 1;
-              for (int i = 1; i <= number; i++) {
-                result *= i;
-              }
-              builder.append("HTTP/1.1 200 OK\n");
-              builder.append("Content-Type: text/html; charset=utf-8\n");
-              builder.append("\n");
-              builder.append("Result is: ").append(result);
-            } catch (NumberFormatException e) {
-              builder.append("HTTP/1.1 400 Bad Request\n");
-              builder.append("Content-Type: text/html; charset=utf-8\n");
-              builder.append("\n");
-              builder.append("Input must be a valid integer");
-            }
-          }
+            builder.append("Temperature value must be a valid number.");
+            return response;
         }
+
+        double result;
+        String convertedUnit;
+
+        if (unit.equals("C")) {
+            result = (value * 9 / 5) + 32;
+            convertedUnit = "Fahrenheit";
+        } else if (unit.equals("F")) {
+            result = (value - 32) * 5 / 9;
+            convertedUnit = "Celsius";
+        } else {
+            builder.append("HTTP/1.1 400 Bad Request\n");
+            builder.append("Content-Type: text/html; charset=utf-8\n");
+            builder.append("\n");
+            builder.append("Invalid temperature unit. Must be either 'C' or 'F'.");
+            return response;
+        }
+
+        builder.append("HTTP/1.1 200 OK\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Temperature equivalent to ").append(value).append("°").append(unit).append(" is ").append(result).append("°").append(convertedUnit);
+    }
+}
         
         else {
           // if the request is not recognized at all
